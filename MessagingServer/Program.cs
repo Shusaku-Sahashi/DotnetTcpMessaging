@@ -12,6 +12,16 @@ namespace MessagingServer
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureServices((hostContext, services) => { services.AddHostedService<Worker>(); });
+                .ConfigureServices((hostContext, services) =>
+                {
+                    services.AddHostedService<Worker>();
+                    ConfigureServices(services);
+                });
+
+        private static void ConfigureServices(IServiceCollection services)
+        {
+            services.AddSingleton<CommandHandler>();
+            services.AddSingleton<ICommandExecutor, MessageExecutor>();
+        }
     }
 }

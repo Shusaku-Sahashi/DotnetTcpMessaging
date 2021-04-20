@@ -3,12 +3,19 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace MessagingServer
 {
     public class MessageExecutor : ICommandExecutor
     {
         private const int HeartbeatInterval = 5000;
+        private readonly ILogger<MessageExecutor> _logger;
+
+        public MessageExecutor(ILogger<MessageExecutor> logger)
+        {
+            _logger = logger;
+        }
 
         public async Task IoLoopAsync(TcpClient client, CancellationToken cancellationToken)
         {
@@ -27,7 +34,7 @@ namespace MessagingServer
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"failed read command");
+                    _logger.LogError(ex, $"failed read command");
                     break;
                 }
 
