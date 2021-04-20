@@ -1,10 +1,8 @@
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -14,10 +12,12 @@ namespace MessagingServer
     public class Worker : BackgroundService
     {
         private readonly ILogger<Worker> _logger;
+        private static CommandHandler _handler;
 
-        public Worker(ILogger<Worker> logger)
+        public Worker(ILogger<Worker> logger, CommandHandler commandHandler)
         {
             _logger = logger;
+            _handler = commandHandler;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -27,29 +27,22 @@ namespace MessagingServer
 
             IList<Task> workers = new List<Task>();
 
-            using (var handler = new CommandHandler())
+            while (!stoppingToken.IsCancellationRequested)
             {
-                while (!stoppingToken.IsCancellationRequested)
+                var receivedChan = Channel.CreateUnbounded<bool>();
+                var task = Task.Factory.StartNew(async () =>
                 {
-                    var client = await server.AcceptTcpClientAsync();
+                    using var client = await server.AcceptTcpClientAsync();
 
-                    var task = Task.Factory.StartNew(async arg =>
-                    {
-                        Debug.Assert(arg is TcpClient, "arg is TcpClient");
-                        var tcpClient = (TcpClient) arg;
+                    receivedChan.Writer.Complete();
 
-                        try
-                        {
-                            await handler.HandleAsync(tcpClient, stoppingToken);
-                        }
-                        finally
-                        {
-                            tcpClient.Dispose();
-                        }
-                    }, client, stoppingToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                    await _handler.HandleAsync(client, stoppingToken);
+                }, stoppingToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
-                    workers.Add(task);
-                }
+                // complete されたらここに来る。
+                await receivedChan.Reader.WaitToReadAsync(stoppingToken);
+
+                workers.Add(task);
             }
 
             await Task.WhenAll(workers);
