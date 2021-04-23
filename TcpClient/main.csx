@@ -7,19 +7,27 @@ var tasks = new List<Task>();
 var rand = new Random();
 foreach (var _ in Enumerable.Range(0, 1))
 {
+    var client = new TcpClient("127.0.0.1", 8080);
     var task = Task.Factory.StartNew(async () =>
        {
-           var client = new TcpClient("127.0.0.1", 8080);
-
            var ns = client.GetStream();
-           await ns.WriteAsync(Encoding.UTF8.GetBytes("Hello\n"), CancellationToken.None);
+           var rs = new StreamReader(ns);
+           var ws = new StreamWriter(ns);
 
-           var buf = new byte[256];
-           await ns.ReadAsync(buf, 0, buf.Length);
+           await ws.WriteAsync("hoge\n");
+           ws.Flush();
+           await rs.ReadLineAsync();
 
-           System.Console.WriteLine("end");
+           System.Console.WriteLine("Start client");
 
-           System.Console.WriteLine(buf.ToString());
+           while (true)
+           {
+               var message = await rs.ReadLineAsync();
+
+               await Task.Delay(1000);
+
+               Console.WriteLine(message);
+           }
        }, CancellationToken.None).Unwrap();
 
     tasks.Add(task);

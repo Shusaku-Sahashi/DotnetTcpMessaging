@@ -37,7 +37,7 @@ namespace MessagingServer
                     receivedChan.Writer.Complete();
 
                     await _handler.HandleAsync(client, stoppingToken);
-                }, stoppingToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                }, stoppingToken, TaskCreationOptions.LongRunning, TaskScheduler.Default).Unwrap();
 
                 // complete されたらここに来る。
                 await receivedChan.Reader.WaitToReadAsync(stoppingToken);
@@ -46,6 +46,10 @@ namespace MessagingServer
             }
 
             await Task.WhenAll(workers);
+
+            server.Stop();
+
+            _logger.LogInformation($"TCP: closing");
         }
     }
 }
