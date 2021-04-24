@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -7,6 +8,12 @@ namespace MessagingServer
     {
         public static void Main(string[] args)
         {
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                var ex = e.ExceptionObject as Exception;
+                Console.WriteLine(ex);
+            };
+
             CreateHostBuilder(args).Build().Run();
         }
 
