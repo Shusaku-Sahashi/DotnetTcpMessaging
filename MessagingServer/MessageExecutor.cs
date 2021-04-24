@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Channels;
@@ -31,7 +30,7 @@ namespace MessagingServer
 
             await startSyncChan.Reader.WaitToReadAsync(cancellationToken);
 
-            while(true)
+            while(!cancellationToken.IsCancellationRequested)
             {
                 client.ReceiveTimeout = HeartbeatInterval.Milliseconds * 2;
 
