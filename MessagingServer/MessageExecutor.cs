@@ -19,19 +19,32 @@ namespace MessagingServer
 
         public async Task IoLoopAsync(TcpClient clientCon, CancellationToken cancellationToken)
         {
+            var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
             var startSyncChan = Channel.CreateUnbounded<bool>();
             using var client = new Client(clientCon);
             
             var task = Task.Factory.StartNew(async () =>
                 {
-                    await StartMessagePumpAsync(client, startSyncChan, cancellationToken);
+                    try
+                    {
+                        await StartMessagePumpAsync(client, startSyncChan, cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Something wrong");
+
+                        // errorが発生した場合は、IoLoopAsyncを止める。
+                        cts.Cancel();
+                    }
                 },
                  cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default).Unwrap();
 
-            await startSyncChan.Reader.WaitToReadAsync(cancellationToken);
+            await startSyncChan.Reader.WaitToReadAsync(cts.Token);
 
-            while(!cancellationToken.IsCancellationRequested)
+            while(!cts.Token.IsCancellationRequested)
             {
+                // TODO: 多分この処理だとReadがTimeoutにならないようなので確認する。
                 client.ReceiveTimeout = HeartbeatInterval.Milliseconds * 2;
 
                 string? line;
