@@ -1,9 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Timer = System.Timers.Timer;
 
 namespace MessagingServer
 {
@@ -26,18 +24,6 @@ namespace MessagingServer
 
             return output;
         }
-
-        public static ChannelReader<IMessage> CreateTickerChannel(TimeSpan interval, Func<IMessage> creator,
-            CancellationToken cancellationToken = default)
-        {
-            var output = Channel.CreateUnbounded<IMessage>();
-            var timer = new Timer(interval.TotalMilliseconds);
-            timer.Elapsed += async (s, e) => await output.Writer.WriteAsync(creator(), cancellationToken);
-            timer.Start();
-
-            return output;
-        }
-
 
         public interface IMessage
         {

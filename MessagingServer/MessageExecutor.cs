@@ -52,14 +52,14 @@ namespace MessagingServer
             await task;
         }
 
-        private static async Task StartMessagePumpAsync(Client client, ChannelWriter<bool> chan, CancellationToken cancellationToken)
+        private static async Task StartMessagePumpAsync(Client client, ChannelWriter<bool> startSyncChannel, CancellationToken cancellationToken)
         {
-            var heartbeatTickerChan =
-                ChannelExtension.CreateTickerChannel(HeartbeatInterval, () => new Tick(), cancellationToken);
-            
-            chan.Complete();
+            using var heartbeatTickerTicker = new TimerTicker(HeartbeatInterval);
+            var heartbeatChannel = heartbeatTickerTicker.GetChannel(() => new Tick(), cancellationToken);
 
-            var channels = new ChannelReader<ChannelExtension.IMessage>[] { heartbeatTickerChan, };
+            startSyncChannel.Complete();
+
+            var channels = new[] { heartbeatChannel, };
             while (!cancellationToken.IsCancellationRequested)
             {
                 await foreach (var msg in ChannelExtension.Merge(channels, cancellationToken).ReadAllAsync(cancellationToken))

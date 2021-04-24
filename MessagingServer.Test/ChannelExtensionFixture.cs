@@ -10,10 +10,10 @@ namespace MessagingServer.Test
         [Test]
         public async Task CreateTickerChannel()
         {
-            var heartbeatTickerChan =
-                ChannelExtension.CreateTickerChannel(TimeSpan.FromSeconds(1), () => new Tick());
+            var heartbeatTicker = new TimerTicker(TimeSpan.FromSeconds(1));
+            var channel = heartbeatTicker.GetChannel(() => new Tick());
 
-            var res = await heartbeatTickerChan.WaitToReadAsync();
+            var res = await channel.WaitToReadAsync();
             
             Assert.True(res);
         }
