@@ -17,6 +17,7 @@ namespace MessagingServer.Test
         public void SetUp()
         {
             _host = Program.CreateHostBuilder(new string[] { }).Build();
+            // StartAsyncを使用する場合、 using で囲まないとゾンビプロセスになるので RunAsync を使用する。
             _runTask = _host.RunAsync();
         }
 
