@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Net.Sockets;
 using System.Threading;
@@ -35,7 +36,8 @@ namespace MessagingServer.Test
             await using var ns = client.GetStream();
             using var rs = new StreamReader(ns);
             await using var ws = new StreamWriter(ns);
-            
+
+            client.ReceiveTimeout = (int) TimeSpan.FromSeconds(6).TotalMilliseconds;
             var task = Task.Factory.StartNew(async () =>
             {
                 await ws.WriteLineAsync("started?");
@@ -44,8 +46,12 @@ namespace MessagingServer.Test
                 for (var i = 0; i < 3; i++)
                 {
                     var message = await rs.ReadLineAsync();
-                    Assert.That(message, Is.EqualTo("heartbeat"));
+                    // 通信が切れている場合、0になる。
+                    // ref: https://qiita.com/kurasho/items/275612d408d32923eabd
+                    Assert.NotZero(message.Length);
+                    Assert.Equals(message, "heartbeat");
                 }
+                
             }, CancellationToken.None).Unwrap();
             
             await task;
