@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package MessageHub;
+
+service Messenger {
+  rpc StartListenMessage(ListenMessageRequest) returns (stream ListenMessageResponse);
+}
+
+message ListenMessageRequest {
+  string connectUserId = 1;
+}
+
+message ListenMessageResponse {
+  string messageId = 1;
+  string senderUserId = 2;
+  string recipientUserId = 3;
+  google.protobuf.Timestamp sendAt = 4;
+  string message = 5;
+  string rootId = 6;
+  string order = 7;
+}
