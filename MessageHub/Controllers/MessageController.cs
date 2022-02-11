@@ -14,9 +14,9 @@ namespace MessageHub.Controllers
     [Route("message")]
     public class MessageController : ControllerBase
     {
+        private readonly ChannelService _channelService;
+        private readonly PostService _postService;
         private readonly ClientHub _hub;
-        private static ChannelService _channelService;
-        private static PostService _postService;
 
         public MessageController(ClientHub hub, ChannelService channelService, PostService postService)
         {
@@ -26,18 +26,18 @@ namespace MessageHub.Controllers
         }
 
         [HttpPost("{userId}")]
-        public async Task<StatusCodeResult> PushDirectMail(string userId, DirectMailRequest request)
+        public Task<StatusCodeResult> PushDirectMail(string userId, DirectMailRequest request)
         {
-            if (!Guid.TryParse(userId, out var parsedRecipientId)) return BadRequest();
+            if (!Guid.TryParse(userId, out var parsedRecipientId)) 
+                return Task.FromResult<StatusCodeResult>(BadRequest());
             var recipientId = new UserId(parsedRecipientId);
 
-            if (!Guid.TryParse(request.SendUserId, out var parsedSenderId)) return BadRequest();
+            if (!Guid.TryParse(request.SendUserId, out var parsedSenderId)) 
+                return Task.FromResult<StatusCodeResult>(BadRequest());
             var senderId = new UserId(parsedSenderId);
-            
-            // TODO: senderId, recipientId の確認
 
-            // TODO: Postを保存して、ユーザにリアルタイムで送信する処理をまとめる。
-            var post = new Post() {
+            var post = new Post
+            {
                 MessageId = new MessageId(Guid.NewGuid()),
                 Message = request.Content,
                 RecipientId = recipientId,
@@ -45,25 +45,17 @@ namespace MessageHub.Controllers
                 SenderId = senderId,
                 SendAt = request.SendAt,
             };
-            _postService.StorePost(post);
 
-            await _hub.TrySend(senderId.Id.ToString(), new ListenMessageResponse()
-            {
-                MessageId = post.MessageId.ToString(),
-                Message = post.Message,
-                SendAt = Timestamp.FromDateTimeOffset(post.SendAt),
-                RootId = post.RootId?.ToString(),
-                RecipientUserId = post.RecipientId.ToString(),
-                SenderUserId = post.SenderId.ToString(),
-            });
+            _postService.SendDirectMail(post);
 
-            return Ok();
+            return Task.FromResult<StatusCodeResult>(Ok());
         }
 
         [HttpPost("channel/{channelId}")]
-        public async Task<StatusCodeResult> PushChannel(string channelId, DirectMailRequest request)
+        public Task<StatusCodeResult> PushChannel(string channelId, DirectMailRequest request)
         {
-            if (!Guid.TryParse(request.SendUserId, out var parsedUserId)) return BadRequest();
+            if (!Guid.TryParse(request.SendUserId, out var parsedUserId))
+                return Task.FromResult<StatusCodeResult>(BadRequest());
             var senderId = new UserId(parsedUserId);
 
             IList<UserId> unActiveUsers = new List<UserId>();
@@ -83,7 +75,7 @@ namespace MessageHub.Controllers
 
             // TODO: 他のサーバーに探しにいく。
 
-            return Ok();
+            return Task.FromResult<StatusCodeResult>(Ok());
         }
     }
 }

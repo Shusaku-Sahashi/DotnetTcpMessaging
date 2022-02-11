@@ -43,7 +43,7 @@ namespace MessageHub
                     endpoints.MapGrpcReflectionService();
                 }
 
-                endpoints.MapGrpcService<MessageService>();
+                endpoints.MapGrpcService<CastMessageGrpcService>();
 
                 endpoints.MapControllers();
             });

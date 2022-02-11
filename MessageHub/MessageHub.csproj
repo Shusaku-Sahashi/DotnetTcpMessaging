@@ -14,8 +14,4 @@
         <PackageReference Include="Grpc.AspNetCore.Web" Version="2.37.0" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Repositories" />
-    </ItemGroup>
-
 </Project>

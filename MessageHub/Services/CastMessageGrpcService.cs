@@ -7,12 +7,12 @@ using Microsoft.Extensions.Logging;
 
 namespace MessageHub.Services
 {
-    public class MessageService : Messenger.MessengerBase
+    public class CastMessageGrpcService : Messenger.MessengerBase
     {
-        private readonly ILogger<MessageService> _logger;
+        private readonly ILogger<CastMessageGrpcService> _logger;
         private readonly ClientHub _hub;
 
-        public MessageService(ILogger<MessageService> logger, ClientHub hub)
+        public CastMessageGrpcService(ILogger<CastMessageGrpcService> logger, ClientHub hub)
         {
             _logger = logger;
             _hub = hub;
